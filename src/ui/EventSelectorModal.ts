@@ -4,18 +4,22 @@ import {CalendarEvent} from '../types';
 import {listTemplates, fillTemplate} from '../notes/TemplateParser';
 import {generateNotes} from '../notes/NoteGenerator';
 
-type DateRange = 'past7' | 'next7' | 'next30';
+type DateRange = 'combined' | 'past7' | 'past30' | 'next7' | 'next30';
 
 const DATE_RANGE_LABELS: Record<DateRange, string> = {
-	past7:  'Letzte 7 Tage',
-	next7:  'Nächste 7 Tage',
-	next30: 'Nächste 30 Tage',
+	combined: 'Letzte & nächste 7 Tage',
+	past7:    'Letzte 7 Tage',
+	past30:   'Letzte 30 Tage',
+	next7:    'Nächste 7 Tage',
+	next30:   'Nächste 30 Tage',
 };
 
 const DATE_RANGE_PARAMS: Record<DateRange, {daysBack: number; daysAhead: number}> = {
-	past7:  {daysBack: 7, daysAhead: 0},
-	next7:  {daysBack: 0, daysAhead: 7},
-	next30: {daysBack: 0, daysAhead: 30},
+	combined: {daysBack: 7, daysAhead: 7},
+	past7:    {daysBack: 7, daysAhead: 0},
+	past30:   {daysBack: 30, daysAhead: 0},
+	next7:    {daysBack: 0, daysAhead: 7},
+	next30:   {daysBack: 0, daysAhead: 30},
 };
 
 export class EventSelectorModal extends Modal {
@@ -24,8 +28,9 @@ export class EventSelectorModal extends Modal {
 	private templates: TFile[] = [];
 	private selected: Set<string> = new Set();
 	private selectedTemplate: TFile | null = null;
-	private dateRange: DateRange = 'next7';
+	private dateRange: DateRange = 'combined';
 	private loading = false;
+	private errorMessage: string | null = null;
 
 	constructor(app: App, plugin: OutlookCalendarPlugin) {
 		super(app);
@@ -97,12 +102,22 @@ export class EventSelectorModal extends Modal {
 		container.empty();
 
 		if (this.loading) {
-			container.createEl('p', {text: 'Lade Termine…'});
+			container.createEl('p', {text: 'Lade Termine…', cls: 'ocn-status'});
+			return;
+		}
+
+		if (this.errorMessage) {
+			const errEl = container.createEl('div', {cls: 'ocn-error'});
+			errEl.createEl('strong', {text: 'Fehler: '});
+			errEl.createEl('span', {text: this.errorMessage});
 			return;
 		}
 
 		if (this.events.length === 0) {
-			container.createEl('p', {text: 'Keine Termine im gewählten Zeitraum gefunden.'});
+			container.createEl('p', {
+				text: 'Keine Termine im gewählten Zeitraum gefunden.',
+				cls: 'ocn-status',
+			});
 			return;
 		}
 
@@ -135,6 +150,7 @@ export class EventSelectorModal extends Modal {
 
 	private async loadData(): Promise<void> {
 		this.loading = true;
+		this.errorMessage = null;
 		this.renderEventList();
 
 		const {daysBack, daysAhead} = DATE_RANGE_PARAMS[this.dateRange];
@@ -145,9 +161,9 @@ export class EventSelectorModal extends Modal {
 				listTemplates(this.app.vault, this.plugin.settings.templateFolder),
 			]);
 		} catch (err) {
-			const msg = err instanceof Error ? err.message : String(err);
-			new Notice(`Outlook Calendar: ${msg}`);
+			this.errorMessage = err instanceof Error ? err.message : String(err);
 			this.events = [];
+			console.error('Outlook Calendar – fetchEvents:', err);
 		} finally {
 			this.loading = false;
 		}

@@ -25,15 +25,15 @@ export class GraphClient {
 		end.setDate(end.getDate() + daysAhead);
 		end.setHours(23, 59, 59, 999);
 
-		const params = new URLSearchParams({
-			startDateTime: start.toISOString(),
-			endDateTime: end.toISOString(),
-			$select: SELECT_FIELDS,
-			$top: '100',
-			$orderby: 'start/dateTime asc',
-		});
-
-		const url = `${GRAPH_BASE}/me/calendarView?${params.toString()}`;
+		// Build URL manually – URLSearchParams encodes '$' as '%24' which can
+		// break OData query parameters on some tenant configurations.
+		const url =
+			`${GRAPH_BASE}/me/calendarView` +
+			`?startDateTime=${encodeURIComponent(start.toISOString())}` +
+			`&endDateTime=${encodeURIComponent(end.toISOString())}` +
+			`&$select=${SELECT_FIELDS}` +
+			`&$top=100` +
+			`&$orderby=start/dateTime`;
 		const raw = await this.graphGet(url);
 
 		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any

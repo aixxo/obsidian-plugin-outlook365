@@ -43,9 +43,20 @@
 	font-size: 0.85em;
 }
 
-.ocn-event-location {
-	color: var(--text-faint);
-	font-size: 0.85em;
+.ocn-status {
+	color: var(--text-muted);
 	font-style: italic;
+	margin: 8px 0;
+	padding: 8px;
+}
+
+.ocn-error {
+	color: var(--text-error);
+	background-color: var(--background-modifier-error);
+	border-radius: 4px;
+	padding: 8px 12px;
+	margin: 8px 0;
+	font-size: 0.9em;
+	word-break: break-word;
 }
 

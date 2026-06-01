@@ -33,14 +33,63 @@ export default class OutlookCalendarPlugin extends Plugin {
 
 		// Command palette entry
 		this.addCommand({
-id: 'outlook-to-note',
-name: 'Termin aus Outlook in Notiz umwandeln',
-callback: () => {
+			id: 'outlook-to-note',
+			name: 'Termin aus Outlook in Notiz umwandeln',
+			callback: () => {
 				if (!this.authManager.isAuthenticated()) {
 					new Notice('Outlook Calendar: Bitte zuerst in den Einstellungen anmelden.');
 					return;
 				}
 				new EventSelectorModal(this.app, this).open();
+			},
+		});
+
+		// ── Debug command ─────────────────────────────────────────────────────
+		// Opens Obsidian Developer Console (Ctrl+Shift+I / Cmd+Opt+I) to see results.
+		this.addCommand({
+			id: 'outlook-debug',
+			name: 'Outlook Calendar: Debug-Info in Console ausgeben',
+			callback: async () => {
+				console.group('Outlook Calendar – Debug');
+				try {
+					// 1. Token
+					const token = await this.authManager.getAccessToken();
+					console.log('✓ Access Token vorhanden (erste 20 Zeichen):', token.substring(0, 20) + '…');
+
+					// 2. /me – Anmeldestatus prüfen
+					const meRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+						headers: {Authorization: `Bearer ${token}`},
+					});
+					const me = await meRes.json() as Record<string, unknown>;
+					console.log('✓ /me Response:', me);
+					const displayName = (me.displayName ?? me.userPrincipalName ?? '?') as string;
+
+					// 3. calendarView ohne zusätzliche Parameter (nackte Abfrage)
+					const now = new Date();
+					const s = new Date(now); s.setDate(s.getDate() - 7); s.setHours(0, 0, 0, 0);
+					const e = new Date(now); e.setDate(e.getDate() + 7); e.setHours(23, 59, 59, 999);
+					const debugUrl =
+						`https://graph.microsoft.com/v1.0/me/calendarView` +
+						`?startDateTime=${encodeURIComponent(s.toISOString())}` +
+						`&endDateTime=${encodeURIComponent(e.toISOString())}` +
+						`&$top=5`;
+					console.log('→ calendarView URL:', debugUrl);
+
+					const calRes = await fetch(debugUrl, {
+						headers: {Authorization: `Bearer ${token}`},
+					});
+					const cal = await calRes.json() as Record<string, unknown>;
+					console.log('✓ calendarView Response:', cal);
+
+					const count = Array.isArray(cal.value) ? cal.value.length : '(value nicht vorhanden)';
+					new Notice(
+						`Outlook Debug:\nAngemeldet als: ${displayName}\nTermine (±7 Tage): ${count}\nDetails in Console (Ctrl+Shift+I)`
+					);
+				} catch (err) {
+					console.error('✗ Fehler:', err);
+					new Notice(`Debug-Fehler: ${err instanceof Error ? err.message : String(err)}`);
+				}
+				console.groupEnd();
 			},
 		});
 

@@ -1,4 +1,5 @@
 import {Notice} from 'obsidian';
+import * as https from 'https';
 import type OutlookCalendarPlugin from '../main';
 import {generateCodeVerifier, generateCodeChallenge, generateState} from './pkce';
 import {TokenData} from '../types';
@@ -165,32 +166,57 @@ export class AuthManager {
 		return this.fetchToken(TOKEN_ENDPOINT(tenantId), body);
 	}
 
-	private async fetchToken(url: string, body: URLSearchParams): Promise<TokenData> {
-		const response = await fetch(url, {
-			method: 'POST',
-			headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-			body: body.toString(),
+	private fetchToken(urlString: string, body: URLSearchParams): Promise<TokenData> {
+		// Use Node.js https instead of browser fetch to avoid the Origin header.
+		// Browser fetch from app://obsidian.md triggers AADSTS9002326 (cross-origin
+		// token redemption blocked for non-SPA apps). Node.js requests carry no Origin.
+		return new Promise((resolve, reject) => {
+			const parsedUrl = new URL(urlString);
+			const postData = body.toString();
+
+			const req = https.request(
+				{
+					hostname: parsedUrl.hostname,
+					path: parsedUrl.pathname,
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/x-www-form-urlencoded',
+						'Content-Length': postData.length,
+					},
+				},
+				(res) => {
+					let raw = '';
+					res.on('data', (chunk: string) => { raw += chunk; });
+					res.on('end', () => {
+						const status = res.statusCode ?? 0;
+						if (status >= 400) {
+							reject(new Error(`Token-Anfrage fehlgeschlagen (${status}): ${raw}`));
+							return;
+						}
+						try {
+							const json = JSON.parse(raw) as {
+								access_token: string;
+								refresh_token?: string;
+								expires_in: number;
+								scope: string;
+							};
+							const currentRefreshToken = body.get('refresh_token') ?? '';
+							resolve({
+								accessToken: json.access_token,
+								refreshToken: json.refresh_token ?? currentRefreshToken,
+								expiresAt: Date.now() + json.expires_in * 1000,
+								scope: json.scope,
+							});
+						} catch {
+							reject(new Error(`Ungültige Token-Antwort: ${raw}`));
+						}
+					});
+				}
+			);
+
+			req.on('error', (err: Error) => reject(err));
+			req.write(postData);
+			req.end();
 		});
-
-		if (!response.ok) {
-			const text = await response.text();
-			throw new Error(`Token-Anfrage fehlgeschlagen (${response.status}): ${text}`);
-		}
-
-		const json = await response.json() as {
-			access_token: string;
-			refresh_token?: string;
-			expires_in: number;
-			scope: string;
-		};
-
-		const currentRefreshToken = body.get('refresh_token') ?? '';
-
-		return {
-			accessToken: json.access_token,
-			refreshToken: json.refresh_token ?? currentRefreshToken,
-			expiresAt: Date.now() + json.expires_in * 1000,
-			scope: json.scope,
-		};
 	}
 }
