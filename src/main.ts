@@ -1,4 +1,4 @@
-import {Notice, Plugin} from 'obsidian';
+import {Notice, Plugin, requestUrl} from 'obsidian';
 import {DEFAULT_SETTINGS} from './settings';
 import {OutlookPluginSettings} from './types';
 import {AuthManager} from './auth/AuthManager';
@@ -50,18 +50,20 @@ export default class OutlookCalendarPlugin extends Plugin {
 			id: 'outlook-debug',
 			name: 'Outlook Calendar: Debug-Info in Console ausgeben',
 			callback: async () => {
-				console.group('Outlook Calendar – Debug');
+				console.debug('Outlook Calendar – Debug start');
 				try {
 					// 1. Token
 					const token = await this.authManager.getAccessToken();
-					console.log('✓ Access Token vorhanden (erste 20 Zeichen):', token.substring(0, 20) + '…');
+					console.debug('✓ Access Token vorhanden (erste 20 Zeichen):', token.substring(0, 20) + '…');
 
 					// 2. /me – Anmeldestatus prüfen
-					const meRes = await fetch('https://graph.microsoft.com/v1.0/me', {
+					const meRes = await requestUrl({
+						url: 'https://graph.microsoft.com/v1.0/me',
 						headers: {Authorization: `Bearer ${token}`},
+						throw: false,
 					});
-					const me = await meRes.json() as Record<string, unknown>;
-					console.log('✓ /me Response:', me);
+					const me = meRes.json as Record<string, unknown>;
+					console.debug('✓ /me Response:', me);
 					const displayName = (me.displayName ?? me.userPrincipalName ?? '?') as string;
 
 					// 3. calendarView ohne zusätzliche Parameter (nackte Abfrage)
@@ -73,13 +75,15 @@ export default class OutlookCalendarPlugin extends Plugin {
 						`?startDateTime=${encodeURIComponent(s.toISOString())}` +
 						`&endDateTime=${encodeURIComponent(e.toISOString())}` +
 						`&$top=5`;
-					console.log('→ calendarView URL:', debugUrl);
+					console.debug('→ calendarView URL:', debugUrl);
 
-					const calRes = await fetch(debugUrl, {
+					const calRes = await requestUrl({
+						url: debugUrl,
 						headers: {Authorization: `Bearer ${token}`},
+						throw: false,
 					});
-					const cal = await calRes.json() as Record<string, unknown>;
-					console.log('✓ calendarView Response:', cal);
+					const cal = calRes.json as Record<string, unknown>;
+					console.debug('✓ calendarView Response:', cal);
 
 					const count = Array.isArray(cal.value) ? cal.value.length : '(value nicht vorhanden)';
 					new Notice(
@@ -89,7 +93,7 @@ export default class OutlookCalendarPlugin extends Plugin {
 					console.error('✗ Fehler:', err);
 					new Notice(`Debug-Fehler: ${err instanceof Error ? err.message : String(err)}`);
 				}
-				console.groupEnd();
+				console.debug('Outlook Calendar – Debug end');
 			},
 		});
 

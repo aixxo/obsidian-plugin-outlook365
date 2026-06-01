@@ -22,6 +22,12 @@ export default tseslint.config(
 		},
 	},
 	...obsidianmd.configs.recommended,
+	{
+		// The plugin UI is in German; the English-only sentence-case rule is not applicable.
+		rules: {
+			'obsidianmd/ui/sentence-case': 'off',
+		},
+	},
 	globalIgnores([
 		"node_modules",
 		"dist",

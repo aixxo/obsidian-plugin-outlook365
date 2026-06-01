@@ -1,8 +1,33 @@
+import {requestUrl} from 'obsidian';
 import {CalendarEvent} from '../types';
 import {AuthManager} from '../auth/AuthManager';
 
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';
 const SELECT_FIELDS = 'id,subject,start,end,location,bodyPreview,body,attendees,organizer,isOnlineMeeting,onlineMeetingUrl';
+
+// ── Raw Graph API response types ─────────────────────────────────────────────
+
+interface RawAttendee {
+	emailAddress?: { name?: string; address?: string };
+}
+
+interface RawEvent {
+	id: string;
+	subject?: string;
+	start?: { dateTime: string };
+	end?: { dateTime: string };
+	location?: { displayName?: string };
+	bodyPreview?: string;
+	body?: { content?: string };
+	attendees?: RawAttendee[];
+	organizer?: { emailAddress?: { name?: string } };
+	isOnlineMeeting?: boolean;
+	onlineMeetingUrl?: string;
+}
+
+interface RawCalendarViewResponse {
+	value: RawEvent[];
+}
 
 export class GraphClient {
 	private auth: AuthManager;
@@ -34,55 +59,51 @@ export class GraphClient {
 			`&$select=${SELECT_FIELDS}` +
 			`&$top=100` +
 			`&$orderby=start/dateTime`;
-		const raw = await this.graphGet(url);
-
-		// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-		return ((raw as any).value as unknown[]).map((e) => this.mapEvent(e));
+		const raw = await this.graphGet(url) as RawCalendarViewResponse;
+		return raw.value.map((e) => this.mapEvent(e));
 	}
 
 	// ── Private ───────────────────────────────────────────────────────────────
 
 	private async graphGet(url: string): Promise<unknown> {
 		const token = await this.auth.getAccessToken();
-		const response = await fetch(url, {
+		const response = await requestUrl({
+			url,
 			headers: {
 				Authorization: `Bearer ${token}`,
 				'Content-Type': 'application/json',
 			},
+			throw: false,
 		});
 
 		if (response.status === 401) {
-			// Token may have just expired; one retry after refresh is handled by getAccessToken
 			throw new Error('Nicht autorisiert (401). Bitte neu anmelden.');
 		}
 
-		if (!response.ok) {
-			const text = await response.text();
-			throw new Error(`Graph API Fehler (${response.status}): ${text}`);
+		if (response.status < 200 || response.status >= 300) {
+			throw new Error(`Graph API Fehler (${response.status}): ${response.text}`);
 		}
 
-		return response.json();
+		return response.json as unknown;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private mapEvent(raw: any): CalendarEvent {
+	private mapEvent(raw: RawEvent): CalendarEvent {
 		const attendees: string[] = (raw.attendees ?? [])
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			.map((a: any) => (a.emailAddress?.name as string) ?? (a.emailAddress?.address as string) ?? '')
+			.map((a) => a.emailAddress?.name ?? a.emailAddress?.address ?? '')
 			.filter(Boolean);
 
 		return {
-			id: raw.id as string,
-			subject: (raw.subject as string) ?? '(Kein Titel)',
-			start: raw.start?.dateTime as string,
-			end: raw.end?.dateTime as string,
-			location: (raw.location?.displayName as string) ?? '',
-			bodyPreview: (raw.bodyPreview as string) ?? '',
-			bodyHtml: (raw.body?.content as string) ?? '',
+			id: raw.id,
+			subject: raw.subject ?? '(Kein Titel)',
+			start: raw.start?.dateTime ?? '',
+			end: raw.end?.dateTime ?? '',
+			location: raw.location?.displayName ?? '',
+			bodyPreview: raw.bodyPreview ?? '',
+			bodyHtml: raw.body?.content ?? '',
 			attendees,
-			organizer: (raw.organizer?.emailAddress?.name as string) ?? '',
-			isOnlineMeeting: (raw.isOnlineMeeting as boolean) ?? false,
-			onlineMeetingUrl: (raw.onlineMeetingUrl as string) ?? '',
+			organizer: raw.organizer?.emailAddress?.name ?? '',
+			isOnlineMeeting: raw.isOnlineMeeting ?? false,
+			onlineMeetingUrl: raw.onlineMeetingUrl ?? '',
 		};
 	}
 }

@@ -19,11 +19,11 @@ export class OutlookSettingsTab extends PluginSettingTab {
 		const {containerEl} = this;
 		containerEl.empty();
 
-		containerEl.createEl('h2', {text: 'Outlook Calendar – Einstellungen'});
+		new Setting(containerEl).setName('Outlook Calendar – Einstellungen').setHeading();
 
 		// ── Azure App Registration ─────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Azure App-Registrierung'});
+		new Setting(containerEl).setName('Azure App-Registrierung').setHeading();
 
 		new Setting(containerEl)
 			.setName('Client-ID (Application ID)')
@@ -58,7 +58,7 @@ export class OutlookSettingsTab extends PluginSettingTab {
 
 		// ── Authentication ─────────────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Authentifizierung'});
+		new Setting(containerEl).setName('Authentifizierung').setHeading();
 
 		const authStatus = this.plugin.authManager.isAuthenticated()
 			? '✓ Angemeldet'
@@ -87,7 +87,7 @@ export class OutlookSettingsTab extends PluginSettingTab {
 
 		// ── Folders ────────────────────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Ordner'});
+		new Setting(containerEl).setName('Ordner').setHeading();
 
 		new Setting(containerEl)
 			.setName('Vorlagen-Ordner')
@@ -117,7 +117,7 @@ export class OutlookSettingsTab extends PluginSettingTab {
 
 		// ── Defaults ─────────────────────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Standards & Verhalten'});
+		new Setting(containerEl).setName('Standards & Verhalten').setHeading();
 
 		const DATE_RANGE_LABELS: Record<DateRange, string> = {
 			combined: 'Letzte & nächste 7 Tage',
@@ -176,7 +176,7 @@ export class OutlookSettingsTab extends PluginSettingTab {
 
 		// ── Help ───────────────────────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Einrichtung'});
+		new Setting(containerEl).setName('Einrichtung').setHeading();
 		const help = containerEl.createEl('ol');
 		[
 			'Gehe zu portal.azure.com → App-Registrierungen → Neue Registrierung.',

@@ -61,9 +61,9 @@ export class EventSelectorModal extends Modal {
 					dd.addOption(key, label);
 				}
 				dd.setValue(this.dateRange);
-				dd.onChange(async (val) => {
+				dd.onChange((val) => {
 					this.dateRange = val as DateRange;
-					await this.loadData();
+					void this.loadData();
 				});
 			});
 
@@ -94,7 +94,7 @@ export class EventSelectorModal extends Modal {
 			text: 'Notizen erstellen',
 			cls: 'mod-cta',
 		});
-		btn.addEventListener('click', () => this.onCreate());
+		btn.addEventListener('click', () => { void this.onCreate(); });
 	}
 
 	private renderEventList(): void {
@@ -141,7 +141,7 @@ export class EventSelectorModal extends Modal {
 
 			for (const event of dayEvents) {
 				const row = list.createEl('div', {cls: 'ocn-event-row'});
-				const cb = row.createEl('input', {type: 'checkbox'}) as HTMLInputElement;
+				const cb = row.createEl('input', {type: 'checkbox'});
 				cb.checked = this.selected.has(event.id);
 				cb.addEventListener('change', () => {
 					if (cb.checked) {
