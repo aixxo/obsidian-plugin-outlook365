@@ -1,7 +1,7 @@
 {
 	"id": "outlook-calendar-notes",
 	"name": "Outlook Calendar to Notes",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"minAppVersion": "1.0.0",
 	"description": "Erstellt Obsidian-Notizen aus Outlook 365-Kalenderterminen via Microsoft Graph API.",
 	"author": "Oliver Kuhl",
