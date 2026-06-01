@@ -1,8 +1,51 @@
-/*
+/* Outlook Calendar to Notes – plugin styles */
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.ocn-event-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	max-height: 300px;
+	overflow-y: auto;
+	margin: 8px 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 4px;
+	padding: 8px;
+}
 
-If your plugin does not need CSS, delete this file.
+.ocn-event-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 4px;
+	border-radius: 4px;
+}
 
-*/
+.ocn-event-row:hover {
+	background-color: var(--background-modifier-hover);
+}
+
+.ocn-event-row input[type="checkbox"] {
+	margin-top: 3px;
+	flex-shrink: 0;
+}
+
+.ocn-event-row label {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	align-items: baseline;
+	cursor: pointer;
+	font-size: 0.9em;
+}
+
+.ocn-event-time {
+	color: var(--text-muted);
+	font-size: 0.85em;
+}
+
+.ocn-event-location {
+	color: var(--text-faint);
+	font-size: 0.85em;
+	font-style: italic;
+}
+
