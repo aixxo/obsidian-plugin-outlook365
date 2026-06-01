@@ -6,5 +6,7 @@ export const DEFAULT_SETTINGS: OutlookPluginSettings = {
 	templateFolder: 'Templates',
 	outputFolder: 'Meetings',
 	defaultDateRange: 'combined',
+	defaultTemplate: '',
+	openAfterCreate: false,
 	tokenData: null,
 };

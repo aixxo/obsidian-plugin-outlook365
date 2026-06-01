@@ -34,6 +34,7 @@ export class EventSelectorModal extends Modal {
 		super(app);
 		this.plugin = plugin;
 		this.dateRange = plugin.settings.defaultDateRange;
+		// selectedTemplate is resolved once templates are loaded in loadData()
 	}
 
 	async onOpen(): Promise<void> {
@@ -70,14 +71,15 @@ export class EventSelectorModal extends Modal {
 		new Setting(contentEl)
 			.setName('Vorlage')
 			.addDropdown((dd) => {
-				if (this.templates.length === 0) {
-					dd.addOption('', '(Keine Vorlagen gefunden)');
-				} else {
-					dd.addOption('', '– Vorlage wählen –');
-					for (const t of this.templates) {
-						dd.addOption(t.path, t.basename);
-					}
+				dd.addOption('', '– Eingebauter Standard –');
+				for (const t of this.templates) {
+					dd.addOption(t.path, t.basename);
 				}
+				if (this.templates.length === 0) {
+					// keep only the built-in option; no extra placeholder needed
+				}
+				// Set current value (may have been pre-selected from settings)
+				dd.setValue(this.selectedTemplate?.path ?? '');
 				dd.onChange((path) => {
 					this.selectedTemplate = this.templates.find((t) => t.path === path) ?? null;
 				});
@@ -176,6 +178,12 @@ export class EventSelectorModal extends Modal {
 				this.plugin.graphClient.fetchEvents(daysBack, daysAhead),
 				listTemplates(this.app.vault, this.plugin.settings.templateFolder),
 			]);
+			// Pre-select default template from settings (only on first load)
+			if (this.selectedTemplate === null && this.plugin.settings.defaultTemplate) {
+				this.selectedTemplate = this.templates.find(
+					(t) => t.path === this.plugin.settings.defaultTemplate
+				) ?? null;
+			}
 		} catch (err) {
 			this.errorMessage = err instanceof Error ? err.message : String(err);
 			this.events = [];
@@ -229,6 +237,18 @@ export class EventSelectorModal extends Modal {
 			.join(', ');
 
 		new Notice(`Outlook Calendar: ${summary || 'Fertig.'}`);
+
+		// Open first created note if setting is enabled
+		if (this.plugin.settings.openAfterCreate && result.created.length > 0) {
+			const firstPath = result.created[0];
+			if (firstPath) {
+				const file = this.app.vault.getFileByPath(firstPath);
+				if (file) {
+					await this.app.workspace.getLeaf(false).openFile(file);
+				}
+			}
+		}
+
 		this.close();
 	}
 }

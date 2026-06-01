@@ -27,5 +27,7 @@ export interface OutlookPluginSettings {
 	templateFolder: string;
 	outputFolder: string;
 	defaultDateRange: DateRange;
+	defaultTemplate: string;   // vault path of default template, '' = built-in
+	openAfterCreate: boolean;
 	tokenData: TokenData | null;
 }

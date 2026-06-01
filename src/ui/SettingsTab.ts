@@ -1,6 +1,7 @@
-import {App, Notice, PluginSettingTab, Setting} from 'obsidian';
+import {App, Notice, PluginSettingTab, Setting, TFile} from 'obsidian';
 import type OutlookCalendarPlugin from '../main';
 import {DateRange} from '../types';
+import {listTemplates} from '../notes/TemplateParser';
 
 export class OutlookSettingsTab extends PluginSettingTab {
 	plugin: OutlookCalendarPlugin;
@@ -11,6 +12,10 @@ export class OutlookSettingsTab extends PluginSettingTab {
 	}
 
 	display(): void {
+		void this.displayAsync();
+	}
+
+	private async displayAsync(): Promise<void> {
 		const {containerEl} = this;
 		containerEl.empty();
 
@@ -110,9 +115,9 @@ export class OutlookSettingsTab extends PluginSettingTab {
 					})
 			);
 
-		// ── Default date range ───────────────────────────────────────────────────
+		// ── Defaults ─────────────────────────────────────────────────────────────
 
-		containerEl.createEl('h3', {text: 'Standardzeitraum'});
+		containerEl.createEl('h3', {text: 'Standards & Verhalten'});
 
 		const DATE_RANGE_LABELS: Record<DateRange, string> = {
 			combined: 'Letzte & nächste 7 Tage',
@@ -135,6 +140,39 @@ export class OutlookSettingsTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				});
 			});
+
+		// Default template
+		const templates: TFile[] = await listTemplates(this.app.vault, this.plugin.settings.templateFolder);
+		new Setting(containerEl)
+			.setName('Standard-Vorlage')
+			.setDesc('Vorlage, die beim Öffnen des Termin-Dialogs vorausgewählt ist.')
+			.addDropdown((dd) => {
+				dd.addOption('', '– Eingebauter Standard –');
+				for (const t of templates) {
+					dd.addOption(t.path, t.basename);
+				}
+				if (templates.length === 0) {
+					dd.addOption('__none__', '(Keine Vorlagen im Ordner gefunden)');
+				}
+				dd.setValue(this.plugin.settings.defaultTemplate);
+				dd.onChange(async (value) => {
+					this.plugin.settings.defaultTemplate = value === '__none__' ? '' : value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		// Open after create
+		new Setting(containerEl)
+			.setName('Notiz nach Erstellung öffnen')
+			.setDesc('Wenn aktiviert, wird die erstellte Notiz automatisch in Obsidian geöffnet (bei mehreren Terminen: die erste erstellte).')
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.openAfterCreate)
+					.onChange(async (value) => {
+						this.plugin.settings.openAfterCreate = value;
+						await this.plugin.saveSettings();
+					})
+			);
 
 		// ── Help ───────────────────────────────────────────────────────────────
 
