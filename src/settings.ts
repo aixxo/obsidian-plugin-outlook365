@@ -5,5 +5,6 @@ export const DEFAULT_SETTINGS: OutlookPluginSettings = {
 	tenantId: 'common',
 	templateFolder: 'Templates',
 	outputFolder: 'Meetings',
+	defaultDateRange: 'combined',
 	tokenData: null,
 };

@@ -1,10 +1,8 @@
 import {App, Modal, Notice, Setting, TFile} from 'obsidian';
 import type OutlookCalendarPlugin from '../main';
-import {CalendarEvent} from '../types';
+import {CalendarEvent, DateRange} from '../types';
 import {listTemplates, fillTemplate} from '../notes/TemplateParser';
 import {generateNotes} from '../notes/NoteGenerator';
-
-type DateRange = 'combined' | 'past7' | 'past30' | 'next7' | 'next30';
 
 const DATE_RANGE_LABELS: Record<DateRange, string> = {
 	combined: 'Letzte & nächste 7 Tage',
@@ -28,13 +26,14 @@ export class EventSelectorModal extends Modal {
 	private templates: TFile[] = [];
 	private selected: Set<string> = new Set();
 	private selectedTemplate: TFile | null = null;
-	private dateRange: DateRange = 'combined';
+	private dateRange: DateRange;
 	private loading = false;
 	private errorMessage: string | null = null;
 
 	constructor(app: App, plugin: OutlookCalendarPlugin) {
 		super(app);
 		this.plugin = plugin;
+		this.dateRange = plugin.settings.defaultDateRange;
 	}
 
 	async onOpen(): Promise<void> {

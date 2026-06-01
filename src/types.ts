@@ -19,10 +19,13 @@ export interface TokenData {
 	scope: string;
 }
 
+export type DateRange = 'combined' | 'past7' | 'past30' | 'next7' | 'next30';
+
 export interface OutlookPluginSettings {
 	clientId: string;
 	tenantId: string;
 	templateFolder: string;
 	outputFolder: string;
+	defaultDateRange: DateRange;
 	tokenData: TokenData | null;
 }

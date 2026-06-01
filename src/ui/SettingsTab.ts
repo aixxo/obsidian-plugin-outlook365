@@ -1,5 +1,6 @@
 import {App, Notice, PluginSettingTab, Setting} from 'obsidian';
 import type OutlookCalendarPlugin from '../main';
+import {DateRange} from '../types';
 
 export class OutlookSettingsTab extends PluginSettingTab {
 	plugin: OutlookCalendarPlugin;
@@ -108,6 +109,32 @@ export class OutlookSettingsTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					})
 			);
+
+		// ── Default date range ───────────────────────────────────────────────────
+
+		containerEl.createEl('h3', {text: 'Standardzeitraum'});
+
+		const DATE_RANGE_LABELS: Record<DateRange, string> = {
+			combined: 'Letzte & nächste 7 Tage',
+			past7:    'Letzte 7 Tage',
+			past30:   'Letzte 30 Tage',
+			next7:    'Nächste 7 Tage',
+			next30:   'Nächste 30 Tage',
+		};
+
+		new Setting(containerEl)
+			.setName('Standard-Zeitraum')
+			.setDesc('Welcher Zeitraum beim Öffnen des Termin-Dialogs vorausgewählt ist.')
+			.addDropdown((dd) => {
+				for (const [key, label] of Object.entries(DATE_RANGE_LABELS)) {
+					dd.addOption(key, label);
+				}
+				dd.setValue(this.plugin.settings.defaultDateRange);
+				dd.onChange(async (value) => {
+					this.plugin.settings.defaultDateRange = value as DateRange;
+					await this.plugin.saveSettings();
+				});
+			});
 
 		// ── Help ───────────────────────────────────────────────────────────────
 
