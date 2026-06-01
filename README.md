@@ -1,90 +1,149 @@
-# Obsidian Sample Plugin
+# Outlook Calendar to Notes
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Ein Obsidian-Plugin, das Termine aus deinem Outlook 365-Kalender abruft und daraus Notizen im Vault erstellt – wahlweise nach eigenen Vorlagen.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+---
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+## Voraussetzungen
 
-## First time developing plugins?
+- Obsidian **Desktop** (Windows / macOS / Linux)
+- Ein Microsoft 365-Konto mit Zugriff auf Outlook-Kalender
+- Eine eigene **Azure AD App-Registrierung** (kostenlos, ohne Admin-Rechte möglich)
 
-Quick starting guide for new plugin devs:
+---
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## Einrichtung
 
-## Releasing new releases
+### 1. Azure AD App registrieren
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+1. Öffne [portal.azure.com](https://portal.azure.com) und gehe zu **Microsoft Entra ID → App-Registrierungen → Neue Registrierung**.
+2. Name: beliebig, z. B. `Obsidian Outlook Plugin`.
+3. Unterstützte Kontotypen: **Konten in einem beliebigen Organisationsverzeichnis und persönliche Microsoft-Konten** (oder nur deine Organisation).
+4. Redirect-URI: Plattform **„Mobile- und Desktopanwendungen"** → URI: `obsidian://outlook-calendar-notes`
+5. Registrieren.
+6. Unter **API-Berechtigungen → Berechtigung hinzufügen → Microsoft Graph → Delegierte Berechtigungen**: `Calendars.Read` hinzufügen.
+7. Die **Application (Client) ID** aus der Übersicht kopieren.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+### 2. Plugin konfigurieren
 
-## Adding your plugin to the community plugin list
+**Einstellungen → Outlook Calendar to Notes:**
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+| Feld | Inhalt |
+|---|---|
+| Client-ID | Die Application (Client) ID aus Schritt 1.7 |
+| Tenant-ID | Deine Tenant-ID oder `common` für persönliche Konten |
+| Vorlagen-Ordner | Pfad im Vault, der Vorlagen-Dateien enthält (Standard: `Templates`) |
+| Ausgabe-Ordner | Pfad, in dem Notizen gespeichert werden (Standard: `Meetings`) |
+| Standard-Zeitraum | Vorausgewählter Zeitraum beim Öffnen des Termin-Dialogs |
 
-## How to use
+### 3. Anmelden
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+Klicke in den Einstellungen auf **„Jetzt anmelden"**. Ein Browser-Fenster öffnet sich für den Microsoft-Login. Nach erfolgreichem Login kehrt Obsidian automatisch zurück.
 
-## Manually installing the plugin
+---
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+## Nutzung
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+1. Klicke auf das Kalender-Symbol in der linken Symbolleiste **oder** öffne die Befehlspalette (`Ctrl/Cmd + P`) und suche nach **„Termin aus Outlook in Notiz umwandeln"**.
+2. Im Dialog erscheinen deine Termine, nach Tagen gruppiert.
+3. Wähle einen Zeitraum und eine Vorlage.
+4. Wähle einen oder mehrere Termine per Checkbox aus.
+5. Klicke **„Notizen erstellen"**.
 
-## Funding URL
+Die erstellten Notizen landen im konfigurierten Ausgabe-Ordner. Bereits vorhandene Dateien werden übersprungen (kein Überschreiben).
 
-You can include funding URLs where people who use your plugin can financially support it.
+---
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+## Vorlagen
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+### Vorlagen-Dateien erstellen
+
+Lege `.md`-Dateien im Vorlagen-Ordner an (Standard: `Templates/`). Das Plugin listet automatisch alle Markdown-Dateien in diesem Ordner auf.
+
+**Beispiel-Struktur:**
+
+```
+Templates/
+  Meeting-Standard.md
+  1-on-1.md
+  Workshop.md
 ```
 
-If you have multiple URLs, you can also do:
+### Platzhalter
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+Platzhalter werden beim Erstellen der Notiz durch echte Termindaten ersetzt. Syntax: `{{PlatzhalterName}}`
+
+| Platzhalter | Beschreibung | Beispiel |
+|---|---|---|
+| `{{Titel}}` | Betreff des Termins | `Wöchentliches Teammeeting` |
+| `{{Datum}}` | Datum im Format TT.MM.JJJJ | `02.06.2026` |
+| `{{Startzeit}}` | Startzeit HH:MM | `09:00` |
+| `{{Endzeit}}` | Endzeit HH:MM | `09:30` |
+| `{{Ort}}` | Ort/Raum (oder `–` wenn leer) | `Konferenzraum A` |
+| `{{Beschreibung}}` | Kurzbeschreibung/Vorschau des Termintexts | `Agenda: Status-Update…` |
+| `{{Teilnehmer}}` | Kommagetrennte Liste der Teilnehmer | `Max Mustermann, Anna Schmidt` |
+| `{{Organizer}}` | Name des Organisators | `Oliver Kuhl` |
+| `{{OnlineMeetingUrl}}` | Teams/Zoom-Link (oder `–` wenn kein Online-Meeting) | `https://teams.microsoft.com/…` |
+
+> **Hinweis:** Unbekannte Platzhalter (z. B. Tippfehler) werden durch einen leeren String ersetzt.  
+> Die eingebaute Standard-Vorlage wird verwendet, wenn im Dialog keine Vorlage ausgewählt ist.
+
+### Beispiel-Vorlage
+
+```markdown
+# {{Titel}}
+
+**Datum:** {{Datum}}
+**Zeit:** {{Startzeit}} – {{Endzeit}}
+**Ort:** {{Ort}}
+**Organizer:** {{Organizer}}
+**Teilnehmer:** {{Teilnehmer}}
+**Online-Meeting:** {{OnlineMeetingUrl}}
+
+---
+
+## Agenda / Notizen
+
+{{Beschreibung}}
+
+---
+
+## Aktionspunkte
+
+- [ ] 
+
+---
+
+## Entscheidungen
+
+- 
 ```
 
-## API Documentation
+### Dateiname der erstellten Notiz
 
-See https://docs.obsidian.md
+Der Dateiname wird automatisch generiert:
+
+```
+{Terminbetreff (bereinigt)}_{JJJJ-MM-TT}.md
+```
+
+Beispiel: `Wöchentliches Teammeeting_2026-06-02.md`
+
+Sonderzeichen wie `/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|` werden aus dem Betreff entfernt.
+
+---
+
+## Befehle
+
+| Befehl | Beschreibung |
+|---|---|
+| `Termin aus Outlook in Notiz umwandeln` | Öffnet den Termin-Dialog |
+| `Outlook Calendar: Debug-Info in Console ausgeben` | Gibt Auth-Status und API-Antwort in die Entwickler-Konsole aus (Cmd+Opt+I / Ctrl+Shift+I) |
+
+---
+
+## Datenschutz
+
+- Das Plugin speichert nur das OAuth-Token lokal in den Obsidian-Plugin-Daten (`data.json` im Plugin-Ordner).
+- Es werden keine Termindaten an externe Server übertragen. Alle Anfragen gehen direkt an `graph.microsoft.com`.
+- Es werden keine Metriken oder Telemetrie gesammelt.
