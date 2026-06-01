@@ -174,6 +174,20 @@ export class OutlookSettingsTab extends PluginSettingTab {
 					})
 			);
 
+		// On duplicate
+		new Setting(containerEl)
+			.setName('Wenn Datei bereits existiert')
+			.setDesc('Verhalten, wenn eine Notiz mit demselben Dateinamen bereits vorhanden ist.')
+			.addDropdown((dd) => {
+				dd.addOption('skip', 'Überspringen und Hinweis anzeigen');
+				dd.addOption('suffix', 'Uhrzeit anhängen (z. B. _143022.md)');
+				dd.setValue(this.plugin.settings.onDuplicate);
+				dd.onChange(async (value) => {
+					this.plugin.settings.onDuplicate = value as 'skip' | 'suffix';
+					await this.plugin.saveSettings();
+				});
+			});
+
 		// ── Help ───────────────────────────────────────────────────────────────
 
 		new Setting(containerEl).setName('Einrichtung').setHeading();

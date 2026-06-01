@@ -29,5 +29,6 @@ export interface OutlookPluginSettings {
 	defaultDateRange: DateRange;
 	defaultTemplate: string;   // vault path of default template, '' = built-in
 	openAfterCreate: boolean;
+	onDuplicate: 'skip' | 'suffix'; // 'skip' = show notice, 'suffix' = append HHmmss
 	tokenData: TokenData | null;
 }

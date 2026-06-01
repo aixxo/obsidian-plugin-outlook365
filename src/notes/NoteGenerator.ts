@@ -31,7 +31,8 @@ export async function generateNotes(
 	vault: Vault,
 	events: CalendarEvent[],
 	templateContent: string,
-	outputFolder: string
+	outputFolder: string,
+	onDuplicate: 'skip' | 'suffix' = 'skip'
 ): Promise<NoteGeneratorResult> {
 	const result: NoteGeneratorResult = {created: [], skipped: [], errors: []};
 
@@ -41,13 +42,21 @@ export async function generateNotes(
 	}
 
 	for (const event of events) {
-		const fileName = buildFileName(event, outputFolder);
+		let fileName = buildFileName(event, outputFolder);
 		try {
 			const existing = vault.getFileByPath(fileName);
 			if (existing instanceof TFile) {
-				result.skipped.push(fileName);
-				new Notice(`Übersprungen (existiert bereits): ${fileName}`);
-				continue;
+				if (onDuplicate === 'suffix') {
+					const now = new Date();
+					const hh = String(now.getHours()).padStart(2, '0');
+					const mm = String(now.getMinutes()).padStart(2, '0');
+					const ss = String(now.getSeconds()).padStart(2, '0');
+					fileName = buildFileName(event, outputFolder, `${hh}${mm}${ss}`);
+				} else {
+					result.skipped.push(fileName);
+					new Notice(`Übersprungen (existiert bereits): ${fileName}`);
+					continue;
+				}
 			}
 
 			const content = replacePlaceholders(templateContent, event);
@@ -63,8 +72,9 @@ export async function generateNotes(
 	return result;
 }
 
-function buildFileName(event: CalendarEvent, folder: string): string {
+function buildFileName(event: CalendarEvent, folder: string, timeSuffix?: string): string {
 	const title = sanitize(event.subject);
 	const date = isoDate(event.start);
-	return `${folder}/${title}_${date}.md`;
+	const suffix = timeSuffix ? `_${timeSuffix}` : '';
+	return `${folder}/${title}_${date}${suffix}.md`;
 }

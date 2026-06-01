@@ -225,7 +225,8 @@ export class EventSelectorModal extends Modal {
 			this.app.vault,
 			selectedEvents,
 			templateContent,
-			this.plugin.settings.outputFolder
+			this.plugin.settings.outputFolder,
+			this.plugin.settings.onDuplicate
 		);
 
 		const summary = [

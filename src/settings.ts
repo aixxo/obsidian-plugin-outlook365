@@ -8,5 +8,6 @@ export const DEFAULT_SETTINGS: OutlookPluginSettings = {
 	defaultDateRange: 'combined',
 	defaultTemplate: '',
 	openAfterCreate: false,
+	onDuplicate: 'skip',
 	tokenData: null,
 };
