@@ -122,26 +122,43 @@ export class EventSelectorModal extends Modal {
 		}
 
 		const list = container.createEl('div', {cls: 'ocn-event-list'});
+
+		// Gruppe nach Datum (YYYY-MM-DD)
+		const groups = new Map<string, CalendarEvent[]>();
 		for (const event of this.events) {
-			const row = list.createEl('div', {cls: 'ocn-event-row'});
-			const cb = row.createEl('input', {type: 'checkbox'}) as HTMLInputElement;
-			cb.checked = this.selected.has(event.id);
-			cb.addEventListener('change', () => {
-				if (cb.checked) {
-					this.selected.add(event.id);
-				} else {
-					this.selected.delete(event.id);
-				}
+			const dayKey = event.start.substring(0, 10);
+			if (!groups.has(dayKey)) groups.set(dayKey, []);
+			groups.get(dayKey)!.push(event);
+		}
+
+		for (const [dayKey, dayEvents] of groups) {
+			// Tag-Header
+			list.createEl('div', {
+				text: formatDayHeader(dayKey),
+				cls: 'ocn-day-header',
 			});
 
-			const label = row.createEl('label');
-			label.createEl('strong', {text: event.subject});
-			label.createEl('span', {
-				text: `  ${formatDateTime(event.start)} – ${formatTime(event.end)}`,
-				cls: 'ocn-event-time',
-			});
-			if (event.location) {
-				label.createEl('span', {text: ` · ${event.location}`, cls: 'ocn-event-location'});
+			for (const event of dayEvents) {
+				const row = list.createEl('div', {cls: 'ocn-event-row'});
+				const cb = row.createEl('input', {type: 'checkbox'}) as HTMLInputElement;
+				cb.checked = this.selected.has(event.id);
+				cb.addEventListener('change', () => {
+					if (cb.checked) {
+						this.selected.add(event.id);
+					} else {
+						this.selected.delete(event.id);
+					}
+				});
+
+				const label = row.createEl('label');
+				label.createEl('strong', {text: event.subject});
+				label.createEl('span', {
+					text: `  ${formatTime(event.start)} – ${formatTime(event.end)}`,
+					cls: 'ocn-event-time',
+				});
+				if (event.location) {
+					label.createEl('span', {text: ` · ${event.location}`, cls: 'ocn-event-location'});
+				}
 			}
 		}
 	}
@@ -243,14 +260,14 @@ const DEFAULT_TEMPLATE = `# {{Titel}}
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
-function formatDateTime(iso: string): string {
-	if (!iso) return '–';
-	return new Date(iso).toLocaleString('de-DE', {
+function formatDayHeader(dayKey: string): string {
+	// dayKey is 'YYYY-MM-DD'
+	const date = new Date(dayKey + 'T12:00:00'); // noon to avoid UTC offset issues
+	return date.toLocaleDateString('de-DE', {
+		weekday: 'long',
 		day: '2-digit',
-		month: '2-digit',
+		month: 'long',
 		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit',
 	});
 }
 

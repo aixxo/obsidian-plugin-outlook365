@@ -60,3 +60,18 @@
 	word-break: break-word;
 }
 
+.ocn-day-header {
+	font-size: 0.75em;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+	padding: 8px 4px 2px;
+	border-bottom: 1px solid var(--background-modifier-border);
+	margin-bottom: 2px;
+}
+
+.ocn-day-header:first-child {
+	padding-top: 2px;
+}
+
