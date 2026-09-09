@@ -29,6 +29,13 @@ interface RawCalendarViewResponse {
 	value: RawEvent[];
 }
 
+// Graph's default (no `Prefer: outlook.timezone` header) `dateTime` values are naive UTC
+// clock strings without a `Z`/offset suffix, which `Date` would otherwise parse as local time.
+export function normalizeGraphDateTime(dateTime: string): string {
+	if (!dateTime) return dateTime;
+	return /[Zz]|[+-]\d{2}:?\d{2}$/.test(dateTime) ? dateTime : `${dateTime}Z`;
+}
+
 export class GraphClient {
 	private auth: AuthManager;
 
@@ -95,8 +102,8 @@ export class GraphClient {
 		return {
 			id: raw.id,
 			subject: raw.subject ?? '(Kein Titel)',
-			start: raw.start?.dateTime ?? '',
-			end: raw.end?.dateTime ?? '',
+			start: normalizeGraphDateTime(raw.start?.dateTime ?? ''),
+			end: normalizeGraphDateTime(raw.end?.dateTime ?? ''),
 			location: raw.location?.displayName ?? '',
 			bodyPreview: raw.bodyPreview ?? '',
 			bodyHtml: raw.body?.content ?? '',

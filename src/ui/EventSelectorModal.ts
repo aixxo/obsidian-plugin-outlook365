@@ -124,10 +124,10 @@ export class EventSelectorModal extends Modal {
 
 		const list = container.createEl('div', {cls: 'ocn-event-list'});
 
-		// Gruppe nach Datum (YYYY-MM-DD)
+		// Gruppe nach lokalem Kalendertag (nicht nach UTC-Datum des Rohstrings)
 		const groups = new Map<string, CalendarEvent[]>();
 		for (const event of this.events) {
-			const dayKey = event.start.substring(0, 10);
+			const dayKey = localDateKey(event.start);
 			if (!groups.has(dayKey)) groups.set(dayKey, []);
 			groups.get(dayKey)!.push(event);
 		}
@@ -279,6 +279,16 @@ const DEFAULT_TEMPLATE = `# {{Titel}}
 `;
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
+
+/** Returns the event's local calendar date as 'YYYY-MM-DD'. */
+function localDateKey(iso: string): string {
+	if (!iso) return 'unbekannt';
+	const d = new Date(iso);
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, '0');
+	const day = String(d.getDate()).padStart(2, '0');
+	return `${y}-${m}-${day}`;
+}
 
 function formatDayHeader(dayKey: string): string {
 	// dayKey is 'YYYY-MM-DD'
